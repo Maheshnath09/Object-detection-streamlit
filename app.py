@@ -1,12 +1,10 @@
-# app.py
-
 import streamlit as st
 from ultralytics import YOLO
 from PIL import Image
 import os
-import cv2
 import glob
-import tempfile
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
+import av
 
 st.set_page_config(page_title="YOLOv11 Object Detector", page_icon="📦")
 st.title("📦 Object Detection using YOLOv11")
@@ -18,6 +16,9 @@ model = YOLO("yolo11s.pt")  # Auto-downloads if not present
 # Option: Upload image OR use camera
 mode = st.radio("Choose Detection Mode:", ["📤 Upload Image", "📷 Live Camera"])
 
+# -------------------
+# Upload Image Section
+# -------------------
 if mode == "📤 Upload Image":
     uploaded_file = st.file_uploader("Upload your image", type=["jpg", "png", "jpeg"])
 
@@ -46,30 +47,21 @@ if mode == "📤 Upload Image":
             else:
                 st.warning("⚠️ Prediction folder not found.")
 
+# -------------------
+# Live Camera Section
+# -------------------
 elif mode == "📷 Live Camera":
-    st.warning("Press 'Start' to begin detection. Press 'Stop' to end.")
+    st.info("Click 'Start' to activate your webcam for detection.")
 
-    start_button = st.button("▶ Start Camera")
-    stop_button = st.button("⏹ Stop Camera")
+    class YOLODetector(VideoTransformerBase):
+        def transform(self, frame):
+            img = frame.to_ndarray(format="bgr24")
+            results = model(img)
+            annotated_img = results[0].plot()
+            return annotated_img
 
-    if start_button:
-        cap = cv2.VideoCapture(0)  # 0 = default webcam
-        stframe = st.empty()
-
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            # Run YOLO detection
-            results = model(frame)
-            annotated_frame = results[0].plot()
-
-            # Show frame
-            stframe.image(annotated_frame, channels="BGR")
-
-            if stop_button:
-                break
-
-        cap.release()
-        st.success("Camera stopped.")
+    webrtc_streamer(
+        key="yolo-live",
+        video_transformer_factory=YOLODetector,
+        media_stream_constraints={"video": True, "audio": False}
+    )
