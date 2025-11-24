@@ -51,7 +51,7 @@ streamlit-webrtc
 
 🔧 Installation
 1️⃣ Clone the repo
-git clone https://github.com/your-username/yolo11-object-detection.git
+git clone [https://github.com/your-username/yolo11-object-detection.git](https://github.com/Maheshnath09/Object-detection-streamlit)
 cd yolo11-object-detection
 
 2️⃣ Install dependencies
